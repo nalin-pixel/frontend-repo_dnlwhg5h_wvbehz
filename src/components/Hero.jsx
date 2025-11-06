@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion';
-import Spline from '@splinetool/react-spline';
+import { motion } from 'framer-motion'
+import SafeSpline from './SafeSpline'
 
 export default function Hero({ onExplore }) {
   return (
@@ -15,7 +15,7 @@ export default function Hero({ onExplore }) {
       </div>
 
       <div className="absolute inset-0">
-        <Spline scene="https://prod.spline.design/4nP1g4mXl8Vh0m7X/scene.splinecode" style={{ width: '100%', height: '100%' }} />
+        <SafeSpline scene="https://prod.spline.design/4nP1g4mXl8Vh0m7X/scene.splinecode" />
       </div>
 
       <div className="relative z-10 h-full flex items-center">
@@ -48,5 +48,5 @@ export default function Hero({ onExplore }) {
         </div>
       </div>
     </section>
-  );
+  )
 }

@@ -1,11 +1,11 @@
-import { motion } from 'framer-motion';
-import Spline from '@splinetool/react-spline';
+import { motion } from 'framer-motion'
+import SafeSpline from './SafeSpline'
 
 export default function About() {
   return (
     <section id="about" className="relative h-[calc(100vh-72px)] w-screen flex-shrink-0 snap-start overflow-hidden">
       <div className="absolute inset-0">
-        <Spline scene="https://prod.spline.design/hnVIeQw4z4I1q7Lx/scene.splinecode" style={{ width: '100%', height: '100%' }} />
+        <SafeSpline scene="https://prod.spline.design/hnVIeQw4z4I1q7Lx/scene.splinecode" />
       </div>
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-white/50 via-[#BDE0FE]/60 to-transparent" />
 
@@ -32,5 +32,5 @@ export default function About() {
         </div>
       </div>
     </section>
-  );
+  )
 }
