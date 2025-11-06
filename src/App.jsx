@@ -1,126 +1,78 @@
-import { useMemo, useRef, useCallback, useEffect, useState } from 'react';
-import Header from './components/Header';
-import Hero from './components/Hero';
-import SearchStudents from './components/SearchStudents';
-import RandomBiodata from './components/RandomBiodata';
-import About from './components/About';
-import Footer from './components/Footer';
-import ProgressDots from './components/ProgressDots';
-import ScrollHints from './components/ScrollHints';
-import ParallaxHorses from './components/ParallaxHorses';
+import { useMemo, useState } from "react";
+import Header from "./components/Header";
+import Toolbar from "./components/Toolbar";
+import StudentGrid from "./components/StudentGrid";
+
+const sampleAvatars = [
+  "https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=600&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1527980965255-d3b416303d12?q=80&w=600&auto=format&fit=crop",
+];
+
+function makeStudent(i) {
+  return {
+    id: crypto.randomUUID(),
+    name: `Student ${i + 1}`,
+    avatar: sampleAvatars[i % sampleAvatars.length],
+    hobbies: ["reading", "riding", "coding", "art", "music"][i % 5] + ", design",
+    description:
+      "Passionate learner who enjoys collaborating with friends, exploring new tools, and building creative projects.",
+  };
+}
+
+const initialStudents = Array.from({ length: 36 }, (_, i) => makeStudent(i));
 
 export default function App() {
-  const railRef = useRef(null);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const [students, setStudents] = useState(initialStudents);
+  const [query, setQuery] = useState("");
 
-  const sections = useMemo(
-    () => [
-      { id: 'home' },
-      { id: 'search' },
-      { id: 'biodata' },
-      { id: 'about' },
-      { id: 'footer' },
-    ],
-    []
-  );
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter((s) => {
+      const name = s.name.toLowerCase();
+      const hobbies = (s.hobbies || "").toLowerCase();
+      return name.includes(q) || hobbies.includes(q);
+    });
+  }, [students, query]);
 
-  const scrollToKey = useCallback((key) => {
-    const rail = railRef.current;
-    if (!rail) return;
-
-    const el = rail.querySelector(`#${key}`);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
-
-  const scrollToIndex = useCallback(
-    (index) => {
-      const clamped = Math.max(0, Math.min(index, sections.length - 1));
-      const targetId = sections[clamped].id;
-      scrollToKey(targetId);
-    },
-    [sections, scrollToKey]
-  );
-
-  // Keyboard navigation for accessibility (vertical)
-  useEffect(() => {
-    const onKey = (e) => {
-      if (['ArrowDown', 'PageDown'].includes(e.key)) {
-        e.preventDefault();
-        scrollToIndex(activeIndex + 1);
-      } else if (['ArrowUp', 'PageUp'].includes(e.key)) {
-        e.preventDefault();
-        scrollToIndex(activeIndex - 1);
-      }
+  const addStudent = () => {
+    const next = {
+      id: crypto.randomUUID(),
+      name: "New Student",
+      avatar: "",
+      hobbies: "",
+      description: "",
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [activeIndex, scrollToIndex]);
+    setStudents((prev) => [next, ...prev]);
+  };
 
-  // Track active section and global progress for parallax (vertical)
-  useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
+  const updateStudent = (id, data) => {
+    setStudents((prev) => prev.map((s) => (s.id === id ? { ...s, ...data } : s)));
+  };
 
-    const update = () => {
-      const h = rail.clientHeight;
-      const y = rail.scrollTop;
-      const idx = Math.round(y / h);
-      setActiveIndex(idx);
-      const total = (sections.length - 1) * h || 1;
-      const p = Math.max(0, Math.min(1, y / total));
-      setProgress(p);
-    };
-
-    update();
-    rail.addEventListener('scroll', update, { passive: true });
-
-    const ro = new ResizeObserver(update);
-    ro.observe(rail);
-
-    return () => {
-      rail.removeEventListener('scroll', update);
-      ro.disconnect();
-    };
-  }, [sections.length]);
+  const deleteStudent = (id) => {
+    setStudents((prev) => prev.filter((s) => s.id !== id));
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#BDE0FE] via-[#A2D2FF] to-white text-[#03045E]">
-      <Header onNavigate={scrollToKey} />
-
-      {/* Premium parallax horses overlay */}
-      <ParallaxHorses progress={progress} />
-
-      <main
-        ref={railRef}
-        className="pt-[72px] h-screen overflow-y-auto overflow-x-hidden snap-y snap-mandatory flex flex-col gap-0 scroll-smooth"
-        style={{ scrollSnapType: 'y mandatory' }}
-      >
-        <Hero onExplore={() => scrollToKey('search')} />
-        <SearchStudents />
-        <RandomBiodata />
-        <About />
-        <section id="footer" className="h-[calc(100vh-72px)] w-screen snap-start">
-          <Footer />
-        </section>
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-indigo-50">
+      <Header onAdd={addStudent} />
+      <main className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+        <Toolbar query={query} onQuery={setQuery} onAdd={addStudent} />
+        <StudentGrid students={filtered} onChange={updateStudent} onDelete={deleteStudent} />
+        {filtered.length === 0 && (
+          <div className="text-center py-24 text-slate-600">
+            No students found. Try a different search.
+          </div>
+        )}
       </main>
-
-      {/* Scroll hints arrows (vertical) */}
-      <ScrollHints
-        orientation="vertical"
-        onPrev={() => scrollToIndex(activeIndex - 1)}
-        onNext={() => scrollToIndex(activeIndex + 1)}
-      />
-
-      {/* Progress dots (vertical) */}
-      <ProgressDots
-        orientation="vertical"
-        count={sections.length}
-        activeIndex={activeIndex}
-        onJump={(i) => scrollToIndex(i)}
-      />
+      <footer className="py-8 text-center text-sm text-slate-500">
+        Made with ❤️ — click Edit on any card to change the picture, name, hobbies, or description.
+      </footer>
     </div>
   );
 }
