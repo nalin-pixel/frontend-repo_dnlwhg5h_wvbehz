@@ -31,15 +31,12 @@ export default function App() {
 
     const el = rail.querySelector(`#${key}`);
     if (el) {
-      const left = el.offsetLeft;
-      rail.scrollTo({ left, behavior: 'smooth' });
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
 
   const scrollToIndex = useCallback(
     (index) => {
-      const rail = railRef.current;
-      if (!rail) return;
       const clamped = Math.max(0, Math.min(index, sections.length - 1));
       const targetId = sections[clamped].id;
       scrollToKey(targetId);
@@ -47,33 +44,13 @@ export default function App() {
     [sections, scrollToKey]
   );
 
-  // Map vertical wheel scrolling to horizontal with smooth behavior
+  // Keyboard navigation for accessibility (vertical)
   useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
-
-    const onWheel = (e) => {
-      // Allow pinch zoom / trackpad natural horizontal
-      const dominantVertical = Math.abs(e.deltaY) > Math.abs(e.deltaX);
-      if (dominantVertical) {
-        e.preventDefault();
-        rail.scrollBy({ left: e.deltaY, behavior: 'smooth' });
-      }
-    };
-
-    rail.addEventListener('wheel', onWheel, { passive: false });
-    return () => rail.removeEventListener('wheel', onWheel);
-  }, []);
-
-  // Keyboard navigation for accessibility
-  useEffect(() => {
-    const rail = railRef.current;
-    if (!rail) return;
     const onKey = (e) => {
-      if (['ArrowRight', 'PageDown'].includes(e.key)) {
+      if (['ArrowDown', 'PageDown'].includes(e.key)) {
         e.preventDefault();
         scrollToIndex(activeIndex + 1);
-      } else if (['ArrowLeft', 'PageUp'].includes(e.key)) {
+      } else if (['ArrowUp', 'PageUp'].includes(e.key)) {
         e.preventDefault();
         scrollToIndex(activeIndex - 1);
       }
@@ -82,25 +59,24 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [activeIndex, scrollToIndex]);
 
-  // Track active section and global progress for parallax
+  // Track active section and global progress for parallax (vertical)
   useEffect(() => {
     const rail = railRef.current;
     if (!rail) return;
 
     const update = () => {
-      const w = rail.clientWidth;
-      const x = rail.scrollLeft;
-      const idx = Math.round(x / w);
+      const h = rail.clientHeight;
+      const y = rail.scrollTop;
+      const idx = Math.round(y / h);
       setActiveIndex(idx);
-      const total = (sections.length - 1) * w || 1;
-      const p = Math.max(0, Math.min(1, x / total));
+      const total = (sections.length - 1) * h || 1;
+      const p = Math.max(0, Math.min(1, y / total));
       setProgress(p);
     };
 
     update();
     rail.addEventListener('scroll', update, { passive: true });
 
-    // Also react on resize to keep indices accurate
     const ro = new ResizeObserver(update);
     ro.observe(rail);
 
@@ -119,26 +95,28 @@ export default function App() {
 
       <main
         ref={railRef}
-        className="pt-[72px] h-screen overflow-x-auto overflow-y-hidden snap-x snap-mandatory flex gap-0 scroll-smooth"
-        style={{ scrollSnapType: 'x mandatory' }}
+        className="pt-[72px] h-screen overflow-y-auto overflow-x-hidden snap-y snap-mandatory flex flex-col gap-0 scroll-smooth"
+        style={{ scrollSnapType: 'y mandatory' }}
       >
         <Hero onExplore={() => scrollToKey('search')} />
         <SearchStudents />
         <RandomBiodata />
         <About />
-        <section id="footer" className="h-[calc(100vh-72px)] w-screen flex-shrink-0 snap-start">
+        <section id="footer" className="h-[calc(100vh-72px)] w-screen snap-start">
           <Footer />
         </section>
       </main>
 
-      {/* Scroll hints arrows */}
+      {/* Scroll hints arrows (vertical) */}
       <ScrollHints
+        orientation="vertical"
         onPrev={() => scrollToIndex(activeIndex - 1)}
         onNext={() => scrollToIndex(activeIndex + 1)}
       />
 
-      {/* Progress dots */}
+      {/* Progress dots (vertical) */}
       <ProgressDots
+        orientation="vertical"
         count={sections.length}
         activeIndex={activeIndex}
         onJump={(i) => scrollToIndex(i)}
