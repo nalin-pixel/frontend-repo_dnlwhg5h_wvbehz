@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import SearchStudents from './components/SearchStudents';
@@ -19,21 +19,33 @@ export default function App() {
     []
   );
 
-  const scrollToKey = (key) => {
+  const scrollToKey = useCallback((key) => {
     const rail = railRef.current;
     if (!rail) return;
 
-    let targetId = key;
-    if (key === 'home') targetId = 'home';
-    if (key === 'search') targetId = 'search';
-    if (key === 'about') targetId = 'about';
-
-    const el = rail.querySelector(`#${targetId}`);
+    const el = rail.querySelector(`#${key}`);
     if (el) {
       const left = el.offsetLeft;
       rail.scrollTo({ left, behavior: 'smooth' });
     }
-  };
+  }, []);
+
+  // Map vertical wheel scrolling to horizontal for a true horizontal experience
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+
+    const onWheel = (e) => {
+      // Allow pinch zoom / trackpad natural horizontal
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        rail.scrollBy({ left: e.deltaY, behavior: 'auto' });
+      }
+    };
+
+    rail.addEventListener('wheel', onWheel, { passive: false });
+    return () => rail.removeEventListener('wheel', onWheel);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#BDE0FE] via-[#A2D2FF] to-white text-[#03045E]">
